@@ -8,15 +8,13 @@ namespace LinkVault_Proyecto.Data
         {
         }
 
-        // Estos DbSets son los que te permiten consultar las tablas desde C#
         public DbSet<LinkVault_Proyecto.Models.Categoria> Categorias { get; set; }
         public DbSet<LinkVault_Proyecto.Models.Recurso> Recursos { get; set; }
-        // Agrega este bloque para mapear correctamente con Oracle
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Forzamos a que el ORM busque las tablas en MAYÚSCULAS
             modelBuilder.Entity<LinkVault_Proyecto.Models.Categoria>()
                 .ToTable("CATEGORIAS");
 
