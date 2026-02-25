@@ -1,0 +1,59 @@
+﻿@page "/recursos"
+@using Microsoft.EntityFrameworkCore
+@using LinkVault_Proyecto.Models
+@using LinkVault_Proyecto.Data
+@inject ApplicationDbContext DB
+
+<PageTitle>Mis Recursos</PageTitle>
+
+<div class="container mt-4">
+    <h3 class="mb-4">🚀 Mi Bóveda de Enlaces</h3>
+
+    @if (recursos == null)
+    {
+        <div class="alert alert-info">Consultando Oracle XEPDB1...</div>
+    }
+    else if (!recursos.Any())
+    {
+        <div class="alert alert-warning">No hay enlaces registrados aún.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var item in recursos)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Titulo</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                @(item.Categoria?.Nombre ?? "Sin Categoría")
+                            </h6>
+                            <a href="@item.Url" target="_blank" class="btn btn-outline-primary btn-sm">Visitar Link</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Recurso>? recursos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            recursos = await DB.Recursos
+                .Include(r => r.Categoria)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+
+            recursos = new List<Recurso>();
+            Console.WriteLine($"Error al conectar con Oracle: {ex.Message}");
+        }
+    }
+}
