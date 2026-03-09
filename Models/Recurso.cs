@@ -23,9 +23,6 @@ namespace LinkVault_Proyecto.Models
         [Column("ID_CATEGORIA")]
         public int CategoriaId { get; set; }
 
-        [Column("ACTIVO")]
-        public int Activo { get; set; } = 1; // 1 para activo, 0 para inactivo
-
         // Propiedad de navegación para Entity Framework
         [ForeignKey("CategoriaId")]
         public Categoria? Categoria { get; set; }

@@ -19,9 +19,6 @@ namespace LinkVault_Proyecto.Models
         [StringLength(200)]
         public string? Descripcion { get; set; }
 
-        [Column("FECHA_REGISTRO")]
-        public DateTime FechaRegistro { get; set; } = DateTime.Now;
-
         // Relación: Una categoría tiene muchos recursos
         public ICollection<Recurso> Recursos { get; set; } = new List<Recurso>();
     }
