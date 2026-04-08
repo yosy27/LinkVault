@@ -13,6 +13,13 @@
         <button class="btn btn-success" @onclick="AbrirModal">➕ Nuevo Recurso</button>
     </div>
 
+    <div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">🔍 Buscar</span>
+            <input type="text" class="form-control" placeholder="Escribe para filtrar por título o categoría..." @bind="textoBusqueda" @bind:event="oninput" />
+        </div>
+    </div>
+
     @if (recursos == null)
     {
         <div class="alert alert-info">Consultando Oracle XEPDB1...</div>
@@ -24,7 +31,7 @@
     else
     {
         <div class="row">
-            @foreach (var item in recursos)
+            @foreach (var item in recursosFiltrados) 
             {
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm h-100">
@@ -33,7 +40,13 @@
                             <h6 class="card-subtitle mb-2 text-muted">
                                 @(item.Categoria?.Nombre ?? "Sin Categoría")
                             </h6>
-                            <a href="@item.Url" target="_blank" class="btn btn-outline-primary btn-sm">Visitar Link</a>
+                            <div class="d-flex justify-content-between">
+                                <a href="@item.Url" target="_blank" class="btn btn-outline-primary btn-sm">Visitar</a>
+                                <div>
+                                    <button class="btn btn-outline-warning btn-sm" @onclick="() => PrepararEdicion(item)">✏️</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => EliminarRecurso(item.Id)">🗑️</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -95,6 +108,13 @@
     private List<Categoria>? categorias;
     private Recurso nuevoRecurso = new();
     private bool mostrarModal = false;
+    private String textoBusqueda = "";
+    private List<Recurso> recursosFiltrados => string.IsNullOrWhiteSpace(textoBusqueda)
+        ? recursos ?? new()
+        : recursos?.Where(x =>
+            x.Titulo.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ||
+            (x.Categoria != null && x.Categoria.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase))
+          ).ToList() ?? new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,9 +135,29 @@
         }
     }
 
+    private async Task EliminarRecurso(int id)
+    {
+        var recursosAEliminar = await DB.Recursos.FindAsync(id); 
+
+        if (recursosAEliminar != null)
+        {
+            DB.Recursos.Remove(recursosAEliminar);
+            await DB.SaveChangesAsync();
+            await CargarDatos(); // Refrescar la lista
+        }
+    }
+
+    private void PrepararEdicion(Recurso item)
+    {
+        nuevoRecurso = item;
+		mostrarModal = true;
+    }
+
     private void AbrirModal()
     {
-        nuevoRecurso = new Recurso { CategoriaId = 0 }; // Resetear el objeto
+        nuevoRecurso = new Recurso();
+        nuevoRecurso.Id = 0;        
+        nuevoRecurso.CategoriaId = 0;
         mostrarModal = true;
     }
 
@@ -125,19 +165,34 @@
 
     private async Task GuardarRecurso()
     {
-        if (nuevoRecurso.CategoriaId == 0) return; // Validación simple
+        if (nuevoRecurso.CategoriaId == 0) return;
 
         try
         {
-            DB.Recursos.Add(nuevoRecurso);
+            if (nuevoRecurso.Id == 0)
+            {
+                DB.Recursos.Add(nuevoRecurso);
+            }
+            else
+            {
+              
+                DB.Recursos.Update(nuevoRecurso);
+            }
+
             await DB.SaveChangesAsync();
 
-            mostrarModal = false;
-            await CargarDatos(); // Refrescar la lista
+            mostrarModal = false; 
+            await CargarDatos(); 
+
+            nuevoRecurso = new Recurso { CategoriaId = 0 };
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine("Error: El ID ya existe o hay un problema de duplicidad.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error al guardar: {ex.Message}");
+            Console.WriteLine($"Error general: {ex.Message}");
         }
     }
 }
